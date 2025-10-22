@@ -1,0 +1,165 @@
+openapi: 3.0.3
+info:
+  title: KEPEGAWAIAN PATRIOT API
+  version: 1.0.0
+  description: |
+    API untuk aplikasi **Kepegawaian Patriot**.  
+    Modul meliputi:
+      - Autentikasi (Login)
+      - Personalia (Biodata, Berkas, Info Perusahaan, Saran Pegawai)
+      - Pengaturan Akun (Ubah Password)
+servers:
+  - url: http://localhost/kepegawaian-api
+    description: Local development server
+  - url: https://patriot.erpsystempdam.com/kepegawaian-api
+    description: Production server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SaranPegawai:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "APK error"
+        description:
+          type: string
+          example: "APK ERROR GABISA LOGIN WOI"
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          type: object
+          description: Data pengguna hasil login
+    InfoPerusahaan:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        image:
+          type: string
+          example: "https://patriot.erpsystempdam.com/kepegawaian/uploadsImage/info.jpg"
+    PasswordUpdate:
+      type: object
+      properties:
+        old_password:
+          type: string
+        new_password:
+          type: string
+        confirm_new_password:
+          type: string
+
+paths:
+  /mobile/login:
+    post:
+      tags: [Auth]
+      summary: Login User
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: "admin"
+                password:
+                  type: string
+                  example: "12345"
+      responses:
+        "200":
+          description: Login berhasil
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+
+  /mobile/saran/insert:
+    post:
+      tags: [Personalia]
+      summary: Insert Saran Pegawai
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/SaranPegawai"
+      responses:
+        "200":
+          description: Status insert saran
+
+  /mobile/saran/list:
+    get:
+      tags: [Personalia]
+      summary: List Saran Pegawai
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Daftar saran pegawai
+
+  /mobile/biodata:
+    get:
+      tags: [Personalia]
+      summary: Biodata Pegawai
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Data biodata pegawai
+
+  /mobile/berkas:
+    get:
+      tags: [Personalia]
+      summary: Berkas Pegawai
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Daftar berkas pegawai
+
+  /mobile/info-perusahaan:
+    get:
+      tags: [Personalia]
+      summary: Info / Pengumuman Perusahaan
+      responses:
+        "200":
+          description: Data pengumuman
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfoPerusahaan"
+
+  /mobile/ubah-password:
+    post:
+      tags: [Pengaturan Akun]
+      summary: Ubah Password
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PasswordUpdate"
+      responses:
+        "200":
+          description: Status perubahan password
