@@ -89,6 +89,67 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResponse"
+/mobile/check-absen:
+    post:
+      summary: Cek Absen Pegawai
+      tags: [Absensi]
+      description: |
+        Endpoint untuk melakukan cek absen pegawai.
+
+        **Required Params:**
+        - `type`: Absen Masuk (1) atau Pulang (0)
+        - `location`: Dalam Kantor (1) atau Luar Kantor (0)
+        - `latitude`
+        - `longitude`
+
+        **Optional Params:**
+        - `version`: App version
+        - `developer`: Status developer mode
+      security:
+        - TokenAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: integer
+                  example: 1
+                location:
+                  type: integer
+                  example: 1
+                latitude:
+                  type: string
+                  example: "-6.200000"
+                longitude:
+                  type: string
+                  example: "106.816666"
+                version:
+                  type: string
+                  example: "1.0.0"
+                developer:
+                  type: string
+                  example: "false"
+      responses:
+        '200':
+          description: Absen berhasil dicek
+
+  /mobile/riwayat-absen:
+    get:
+      summary: Riwayat Absen Pegawai
+      tags: [Absensi]
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            example: "202511"
+      responses:
+        '200':
+          description: Data riwayat absen berhasil diambil
 
   /mobile/saran/insert:
     post:
