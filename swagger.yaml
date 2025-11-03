@@ -7,6 +7,7 @@ info:
     Modul meliputi:
       - Autentikasi (Login)
       - Personalia (Biodata, Berkas, Info Perusahaan, Saran Pegawai)
+      - Absensi (Unggah Absen Masuk/Pulang, Riwayat Absen, Cek Absen,Pengajuan Izin/Cuti,Verifikasi Izin/Cuti/Lembur)
       - Pengaturan Akun (Ubah Password)
 servers:
   - url: http://localhost/kepegawaian-api
@@ -89,7 +90,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/LoginResponse"
-/mobile/check-absen:
+  /mobile/check-absen:
     post:
       summary: Cek Absen Pegawai
       tags: [Absensi]
@@ -132,7 +133,7 @@ paths:
                   type: string
                   example: "false"
       responses:
-        '200':
+        "200":
           description: Absen berhasil dicek
 
   /mobile/riwayat-absen:
@@ -148,7 +149,7 @@ paths:
             type: string
             example: "202511"
       responses:
-        '200':
+        "200":
           description: Data riwayat absen berhasil diambil
 
   /mobile/saran/insert:
