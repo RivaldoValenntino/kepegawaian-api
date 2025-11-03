@@ -141,7 +141,7 @@ paths:
       summary: Riwayat Absen Pegawai
       tags: [Absensi]
       security:
-        - TokenAuth: []
+        - BearerAuth: []
       parameters:
         - name: period
           in: query
@@ -151,6 +151,57 @@ paths:
       responses:
         "200":
           description: Data riwayat absen berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          example: "03 November 2025"
+                        status:
+                          type: string
+                          nullable: true
+                          example: "HDR"
+                        inpresent:
+                          type: string
+                          example: "07:31:43"
+                        outpresent:
+                          type: string
+                          example: "17:55:21"
+                        inphoto:
+                          type: string
+                          example: "http://localhost/kepegawaian-api/public/assets/person-circle-outline.png"
+                        outphoto:
+                          type: string
+                          example: "http://localhost/kepegawaian-api/public/assets/person-circle-outline.png"
+                        inmedia:
+                          type: string
+                          nullable: true
+                          example: null
+                        outmedia:
+                          type: string
+                          nullable: true
+                          example: null
+                        color:
+                          type: string
+                          example: "219653"
+              example:
+                data:
+                  - date: "03 November 2025"
+                    status: null
+                    inpresent: "00:00:00"
+                    outpresent: "00:00:00"
+                    inphoto: "http://localhost/kepegawaian-api/public/assets/person-circle-outline.png"
+                    outphoto: "http://localhost/kepegawaian-api/public/assets/person-circle-outline.png"
+                    inmedia: null
+                    outmedia: null
+                    color: "219653"
 
   /mobile/saran/insert:
     post:
