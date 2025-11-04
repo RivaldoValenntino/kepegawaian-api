@@ -203,6 +203,143 @@ paths:
                     outmedia: null
                     color: "219653"
 
+  /mobile/upload-photo:
+    post:
+      summary: Upload Foto Absen
+      tags: [Absensi]
+      security:
+        - TokenAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: "1"
+                filename_image:
+                  type: string
+                  format: binary
+                filename_location:
+                  type: string
+                  format: binary
+                filename_letter:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Upload foto berhasil
+
+  /mobile/absen-upload:
+    post:
+      summary: Submit Absen Pegawai
+      tags: [Absensi]
+      security:
+        - TokenAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                filename_face:
+                  type: string
+                  example: "2025-11-04_wajah_1_masuk_1762236499.jpeg"
+                latitude:
+                  type: string
+                  example: "-6.940672003410164"
+                longitude:
+                  type: string
+                  example: "107.61568141678737"
+                type:
+                  type: string
+                  example: "1"
+                location:
+                  type: string
+                  example: "1"
+                device_token:
+                  type: string
+                  example: "eKakaodkx27nd892jAQN82"
+      responses:
+        "200":
+          description: Absen berhasil disubmit
+
+  /mobile/absen-lembur/upload-photo:
+    post:
+      summary: Upload Foto Lembur
+      tags: [Absensi - Lembur]
+      security:
+        - TokenAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: "1"
+                filename_image:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Upload foto lembur berhasil
+
+  /mobile/absen-lembur/insert:
+    post:
+      summary: Submit Absen Lembur
+      tags: [Absensi - Lembur]
+      security:
+        - TokenAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                latitude:
+                  type: string
+                  example: "-6.940672003410164"
+                longitude:
+                  type: string
+                  example: "107.61568141678737"
+                type:
+                  type: string
+                  example: "1"
+                location:
+                  type: string
+                  example: "1"
+                filename_face:
+                  type: string
+                  example: "lembur_2025-11-04_wajah_1_masuk_1762239779.jpeg"
+                device_token:
+                  type: string
+                  example: "Eei723nwd987s9s23bGHS7"
+                developer:
+                  type: string
+                  example: "active"
+      responses:
+        "200":
+          description: Absen lembur berhasil disubmit
+
+  /mobile/absen-lembur/riwayat-lembur:
+    get:
+      summary: Riwayat Absen Lembur
+      tags: [Absensi - Lembur]
+      security:
+        - TokenAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            example: "202511"
+      responses:
+        "200":
+          description: Data riwayat lembur berhasil diambil
   /mobile/saran/insert:
     post:
       tags: [Personalia]
