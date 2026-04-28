@@ -1,156 +1,792 @@
 openapi: 3.0.3
 info:
-  title: KEPEGAWAIAN PATRIOT API
-  version: 1.0.0
+  title: KEPEGAWAIAN API PATRIOT
   description: |
-    API untuk aplikasi **Kepegawaian Patriot**.  
-    Modul meliputi:
-      - Autentikasi (Login)
-      - Personalia (Biodata, Berkas, Info Perusahaan, Saran Pegawai)
-      - Absensi (Unggah Absen Masuk/Pulang, Riwayat Absen, Cek Absen,Pengajuan Izin/Cuti,Verifikasi Izin/Cuti/Lembur)
-      - Pengaturan Akun (Ubah Password)
+    KEPEGAWAIAN PATRIOT API
+
+    **Absensi** — Upload Absen (Lembur/Masuk/Pulang), Riwayat Absen, Pengajuan Izin/Cuti, Verifikasi Absen
+
+    **Personalia** — Info Gaji, Info Data Diri, Info Perusahaan, Saran Pegawai
+  version: 1.0.0
+
 servers:
-  - url: http://localhost/kepegawaian-api
-    description: Local development server
-  - url: https://patriot.erpsystempdam.com/kepegawaian-api
-    description: Production server
+  - url: '{baseUrl}'
+    variables:
+      baseUrl:
+        default: https://kepegawaian-api.example.com/public
+        description: Base URL server
+
+security:
+  - TokenAuth: []
 
 components:
   securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    TokenAuth:
+      type: apiKey
+      in: header
+      name: token
+
   schemas:
-    SaranPegawai:
+    SuccessResponse:
       type: object
       properties:
-        title:
+        status:
+          type: integer
+          example: 200
+        message:
           type: string
-          example: "APK error"
-        description:
+          example: Berhasil
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 400
+        message:
           type: string
-          example: "APK ERROR GABISA LOGIN WOI"
+          example: Gagal
+
     LoginResponse:
       type: object
       properties:
         token:
           type: string
-        user:
-          type: object
-          description: Data pengguna hasil login
-    InfoPerusahaan:
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    AbsenCheckResponse:
       type: object
       properties:
-        title:
+        name:
           type: string
-        description:
+          example: John Doe
+        nup:
           type: string
-        start_date:
+          example: '0720251286'
+        office:
           type: string
-          format: date
-        end_date:
+          example: Kantor Pusat
+        department:
           type: string
-          format: date
-        image:
+          example: IT
+        position:
           type: string
-          example: "https://patriot.erpsystempdam.com/kepegawaian/uploadsImage/info.jpg"
-    PasswordUpdate:
+          example: Staff
+        is_late:
+          type: string
+          example: '0'
+
+    PreCheckLemburResponse:
       type: object
       properties:
-        old_password:
+        boleh_lembur:
+          type: boolean
+          example: true
+        message:
           type: string
-        new_password:
-          type: string
-        confirm_new_password:
-          type: string
+          example: Pegawai sudah absen pulang, dapat melakukan lembur
+
+tags:
+  - name: Auth
+    description: Autentikasi pengguna
+  - name: Absensi - Absen
+    description: Absen masuk dan pulang harian
+  - name: Absensi - Lembur
+    description: Absen lembur pegawai
+  - name: Absensi - Apel
+    description: Absen apel pegawai
+  - name: Absensi - Izin & Sakit
+    description: Pengajuan izin dan sakit
+  - name: Absensi - Cuti
+    description: Pengajuan cuti pegawai
+  - name: Personalia
+    description: Data personalia pegawai
+  - name: Pengaturan Akun
+    description: Pengaturan akun pengguna
+  - name: Verifikasi Absen Luar
+    description: Verifikasi absen di luar kantor
+  - name: RFC
+    description: Request For Change — endpoint baru dalam pengembangan
 
 paths:
-  /mobile/login:
+
+  # ─────────────────────────────────────────
+  # AUTH
+  # ─────────────────────────────────────────
+  /mobile-v2/login:
     post:
       tags: [Auth]
-      summary: Login User
+      summary: Login
+      description: Login pegawai dan mendapatkan JWT token
+      security: []
       requestBody:
         required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-                  example: "admin"
-                password:
-                  type: string
-                  example: "12345"
-      responses:
-        "200":
-          description: Login berhasil
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/LoginResponse"
-  /mobile/check-absen:
-    post:
-      summary: Cek Absen Pegawai
-      tags: [Absensi]
-      description: |
-        Endpoint untuk melakukan cek absen pegawai.
-
-        **Required Params:**
-        - `type`: Absen Masuk (1) atau Pulang (0)
-        - `location`: Dalam Kantor (1) atau Luar Kantor (0)
-        - `latitude`
-        - `longitude`
-
-        **Optional Params:**
-        - `version`: App version
-        - `developer`: Status developer mode
-      security:
-        - TokenAuth: []
-      requestBody:
         content:
           multipart/form-data:
             schema:
               type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: '0720251286'
+                password:
+                  type: string
+                  example: '1234'
+      responses:
+        '200':
+          description: Login berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Username atau password salah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ─────────────────────────────────────────
+  # ABSEN HARIAN
+  # ─────────────────────────────────────────
+  /mobile-v2/developer-on/absen-check:
+    post:
+      tags: [Absensi - Absen]
+      summary: Cek Absen Pegawai
+      description: |
+        Validasi sebelum submit absen masuk/pulang harian.
+
+        **type:** 1 = Masuk, 0 = Pulang
+
+        **location:** 1 = Dalam Kantor, 0 = Luar Kantor
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, location, latitude, longitude]
               properties:
                 type:
                   type: integer
+                  enum: [0, 1]
                   example: 1
                 location:
                   type: integer
+                  enum: [0, 1]
                   example: 1
                 latitude:
                   type: string
-                  example: "-6.200000"
+                  example: '-6.2296564'
                 longitude:
                   type: string
-                  example: "106.816666"
+                  example: '107.0016458'
                 version:
                   type: string
-                  example: "1.0.0"
+                  description: Versi aplikasi (opsional)
                 developer:
                   type: string
-                  example: "false"
+                  description: Status developer mode (opsional)
+                  example: active
       responses:
-        "200":
-          description: Absen berhasil dicek
+        '200':
+          description: Validasi berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenCheckResponse'
+        '400':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile/upload-photo:
+    post:
+      tags: [Absensi - Absen]
+      summary: Upload Foto Absen
+      description: |
+        Upload foto untuk absen masuk/pulang harian.
+        Minimal satu dari filename_image, filename_location, atau filename_letter harus diisi.
+
+        **type:** 1 = Masuk, 0 = Pulang
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                filename_image:
+                  type: string
+                  format: binary
+                  description: Foto wajah
+                filename_location:
+                  type: string
+                  format: binary
+                  description: Foto kondisi lokasi
+                filename_letter:
+                  type: string
+                  format: binary
+                  description: Foto surat keterangan
+      responses:
+        '200':
+          description: Upload berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Upload gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile/absen-upload:
+    post:
+      tags: [Absensi - Absen]
+      summary: Submit Absen
+      description: Submit absen masuk/pulang harian setelah upload foto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, location, latitude, longitude]
+              properties:
+                filename_face:
+                  type: string
+                  example: 2025-11-04_wajah_1_masuk_1762236499.jpeg
+                latitude:
+                  type: string
+                  example: '-6.940672003410164'
+                longitude:
+                  type: string
+                  example: '107.61568141678737'
+                type:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                location:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                device_token:
+                  type: string
+                  example: eKakaodkx27nd892jAQN82
+      responses:
+        '200':
+          description: Absen berhasil disubmit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Submit gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /mobile/riwayat-absen:
     get:
+      tags: [Absensi - Absen]
       summary: Riwayat Absen Pegawai
-      tags: [Absensi]
-      security:
-        - BearerAuth: []
+      description: Menampilkan riwayat absen harian pegawai per periode
       parameters:
         - name: period
           in: query
+          required: true
           schema:
             type: string
-            example: "202511"
+            example: '202511'
+          description: Periode dalam format YYYYMM
       responses:
-        "200":
-          description: Data riwayat absen berhasil diambil
+        '200':
+          description: Data riwayat absen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  # ─────────────────────────────────────────
+  # ABSEN LEMBUR
+  # ─────────────────────────────────────────
+  /mobile-v2/developer-on/absen-lembur/check:
+    post:
+      tags: [Absensi - Lembur]
+      summary: Cek Absen Pegawai Lembur
+      description: |
+        Validasi sebelum submit absen lembur.
+
+        **type:** 1 = Masuk Lembur, 0 = Pulang Lembur
+
+        **location:** 1 = Dalam Kantor, 0 = Luar Kantor
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, location, latitude, longitude]
+              properties:
+                type:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                location:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                latitude:
+                  type: string
+                  example: '-6.940672003410164'
+                longitude:
+                  type: string
+                  example: '107.61568141678737'
+      responses:
+        '200':
+          description: Validasi berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenCheckResponse'
+        '400':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile/absen-lembur/upload-photo:
+    post:
+      tags: [Absensi - Lembur]
+      summary: Upload Foto Lembur
+      description: Upload foto wajah untuk keperluan absen lembur
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, filename_image]
+              properties:
+                type:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                filename_image:
+                  type: string
+                  format: binary
+                  description: Foto wajah pegawai
+      responses:
+        '200':
+          description: Upload berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Upload gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile/absen-lembur/insert:
+    post:
+      tags: [Absensi - Lembur]
+      summary: Submit Absen Lembur
+      description: Submit absen lembur setelah upload foto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, location, latitude, longitude]
+              properties:
+                latitude:
+                  type: string
+                  example: '-6.940672003410164'
+                longitude:
+                  type: string
+                  example: '107.61568141678737'
+                type:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                location:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                filename_face:
+                  type: string
+                  example: lembur_2025-11-04_wajah_1_masuk_1762239779.jpeg
+                device_token:
+                  type: string
+                  example: Eei723nwd987s9s23bGHS7
+                developer:
+                  type: string
+                  example: active
+      responses:
+        '200':
+          description: Absen lembur berhasil disubmit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Submit gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile/absen-lembur/riwayat-lembur:
+    get:
+      tags: [Absensi - Lembur]
+      summary: Riwayat Absen Lembur
+      description: Menampilkan riwayat absen lembur pegawai per periode
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            example: '202511'
+          description: Periode dalam format YYYYMM
+      responses:
+        '200':
+          description: Data riwayat lembur
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  # ─────────────────────────────────────────
+  # ABSEN APEL
+  # ─────────────────────────────────────────
+  /mobile-v2/developer-on/absen-apel/check:
+    post:
+      tags: [Absensi - Apel]
+      summary: Cek Absen Pegawai Apel
+      description: |
+        Validasi sebelum submit absen apel.
+
+        Validasi meliputi:
+        - Hak absen apel pegawai (is_apel = 1)
+        - Range waktu absen dari absen_setting_apel
+        - Status sudah absen atau belum
+
+        **type:** 1 = Masuk Apel, 0 = Pulang Apel
+
+        **location:** 1 = Dalam Kantor, 0 = Luar Kantor
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, location, latitude, longitude]
+              properties:
+                type:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                location:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                latitude:
+                  type: string
+                  example: '-6.940672003410164'
+                longitude:
+                  type: string
+                  example: '107.61568141678737'
+      responses:
+        '200':
+          description: Validasi berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenCheckResponse'
+        '400':
+          description: Validasi gagal (sudah absen / diluar jam / tidak punya hak apel)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile/absen-apel/upload-photo:
+    post:
+      tags: [Absensi - Apel]
+      summary: Upload Foto Absen Apel
+      description: Upload foto wajah untuk keperluan absen apel
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, filename_image]
+              properties:
+                type:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                filename_image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Upload berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Upload gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile/absen-apel/insert:
+    post:
+      tags: [Absensi - Apel]
+      summary: Submit Absen Apel
+      description: Submit absen apel setelah upload foto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, location, latitude, longitude]
+              properties:
+                latitude:
+                  type: string
+                  example: '-6.940672003410164'
+                longitude:
+                  type: string
+                  example: '107.61568141678737'
+                type:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                location:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                filename_face:
+                  type: string
+                  example: apel_2025-11-04_wajah_1_masuk_1762239779.jpeg
+                device_token:
+                  type: string
+                  example: Eei723nwd987s9s23bGHS7
+                developer:
+                  type: string
+                  example: active
+      responses:
+        '200':
+          description: Absen apel berhasil disubmit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Submit gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile/absen-apel/riwayat-apel:
+    get:
+      tags: [Absensi - Apel]
+      summary: Riwayat Absen Apel
+      description: Menampilkan riwayat absen apel pegawai per periode
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            example: '202511'
+          description: Periode dalam format YYYYMM
+      responses:
+        '200':
+          description: Data riwayat apel
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  # ─────────────────────────────────────────
+  # IZIN / SAKIT
+  # ─────────────────────────────────────────
+  /mobile/absen-pengajuan/list-data:
+    get:
+      tags: [Absensi - Izin & Sakit]
+      summary: Riwayat Pengajuan Absen
+      description: Menampilkan riwayat pengajuan izin/sakit pegawai per periode
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            example: '202511'
+          description: Periode dalam format YYYYMM
+      responses:
+        '200':
+          description: Data riwayat pengajuan
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /mobile-v2/izin/insert:
+    post:
+      tags: [Absensi - Izin & Sakit]
+      summary: Insert Pengajuan Izin/Cuti
+      description: |
+        Mengajukan izin, sakit, atau cuti.
+
+        Jika **reason = CUTI**, sistem otomatis memvalidasi:
+        - Kuota cuti mencukupi
+        - Pengajuan minimal H-7 dari tanggal mulai
+        - Rentang tanggal valid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [reason, start_date, end_date]
+              properties:
+                reason:
+                  type: string
+                  enum: [IZIN, SAKIT, CUTI]
+                  example: CUTI
+                description:
+                  type: string
+                  example: Keperluan keluarga
+                start_date:
+                  type: string
+                  example: 04 November 2025
+                  description: Format tanggal Indonesia (dd MMMM YYYY)
+                end_date:
+                  type: string
+                  example: 06 November 2025
+                  description: Format tanggal Indonesia (dd MMMM YYYY)
+                filename:
+                  type: string
+                  example: surat_izin_001.pdf
+      responses:
+        '200':
+          description: Pengajuan berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Pengajuan gagal
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          jumlah_cuti:
+                            type: integer
+                            example: 3
+                          sisa_kuota:
+                            type: integer
+                            example: 2
+                          kuota_awal:
+                            type: integer
+                            example: 12
+
+  # ─────────────────────────────────────────
+  # PERSONALIA
+  # ─────────────────────────────────────────
+  /mobile/saran/insert:
+    post:
+      tags: [Personalia]
+      summary: Insert Saran Pegawai
+      description: Mengirimkan saran atau keluhan dari pegawai
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, description]
+              properties:
+                title:
+                  type: string
+                  example: APK error
+                description:
+                  type: string
+                  example: APK ERROR GABISA LOGIN WOI
+      responses:
+        '200':
+          description: Saran berhasil dikirim
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Gagal mengirim saran
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile-v2/dashboard/info-perusahaan:
+    get:
+      tags: [Personalia]
+      summary: Info Perusahaan
+      description: Menampilkan pengumuman dan informasi dari perusahaan dengan pagination
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Halaman saat ini
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Jumlah data per halaman
+      responses:
+        '200':
+          description: Data info perusahaan
           content:
             application/json:
               schema:
@@ -161,255 +797,135 @@ paths:
                     items:
                       type: object
                       properties:
-                        date:
+                        title:
                           type: string
-                          example: "03 November 2025"
-                        status:
+                          example: Pengumuman Libur Nasional
+                        start_date:
                           type: string
-                          nullable: true
-                          example: "HDR"
-                        inpresent:
+                          example: 01 Januari 2026
+                        end_date:
                           type: string
-                          example: "07:31:43"
-                        outpresent:
+                          example: 02 Januari 2026
+                        description:
                           type: string
-                          example: "17:55:21"
-                        inphoto:
+                          example: Libur tahun baru
+                        image:
                           type: string
-                          example: "http://localhost/kepegawaian-api/public/assets/person-circle-outline.png"
-                        outphoto:
-                          type: string
-                          example: "http://localhost/kepegawaian-api/public/assets/person-circle-outline.png"
-                        inmedia:
-                          type: string
-                          nullable: true
-                          example: null
-                        outmedia:
-                          type: string
-                          nullable: true
-                          example: null
-                        color:
-                          type: string
-                          example: "219653"
-              example:
-                data:
-                  - date: "03 November 2025"
-                    status: null
-                    inpresent: "00:00:00"
-                    outpresent: "00:00:00"
-                    inphoto: "http://localhost/kepegawaian-api/public/assets/person-circle-outline.png"
-                    outphoto: "http://localhost/kepegawaian-api/public/assets/person-circle-outline.png"
-                    inmedia: null
-                    outmedia: null
-                    color: "219653"
+                          example: info/gambar.jpg
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 42
+                      per_page:
+                        type: integer
+                        example: 10
+                      current_page:
+                        type: integer
+                        example: 1
+                      last_page:
+                        type: integer
+                        example: 5
+                      from:
+                        type: integer
+                        example: 1
+                      to:
+                        type: integer
+                        example: 10
 
-  /mobile/upload-photo:
-    post:
-      summary: Upload Foto Absen
-      tags: [Absensi]
-      security:
-        - TokenAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                  example: "1"
-                filename_image:
-                  type: string
-                  format: binary
-                filename_location:
-                  type: string
-                  format: binary
-                filename_letter:
-                  type: string
-                  format: binary
-      responses:
-        "200":
-          description: Upload foto berhasil
-
-  /mobile/absen-upload:
-    post:
-      summary: Submit Absen Pegawai
-      tags: [Absensi]
-      security:
-        - TokenAuth: []
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                filename_face:
-                  type: string
-                  example: "2025-11-04_wajah_1_masuk_1762236499.jpeg"
-                latitude:
-                  type: string
-                  example: "-6.940672003410164"
-                longitude:
-                  type: string
-                  example: "107.61568141678737"
-                type:
-                  type: string
-                  example: "1"
-                location:
-                  type: string
-                  example: "1"
-                device_token:
-                  type: string
-                  example: "eKakaodkx27nd892jAQN82"
-      responses:
-        "200":
-          description: Absen berhasil disubmit
-
-  /mobile/absen-lembur/upload-photo:
-    post:
-      summary: Upload Foto Lembur
-      tags: [Absensi - Lembur]
-      security:
-        - TokenAuth: []
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                  example: "1"
-                filename_image:
-                  type: string
-                  format: binary
-      responses:
-        "200":
-          description: Upload foto lembur berhasil
-
-  /mobile/absen-lembur/insert:
-    post:
-      summary: Submit Absen Lembur
-      tags: [Absensi - Lembur]
-      security:
-        - TokenAuth: []
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                latitude:
-                  type: string
-                  example: "-6.940672003410164"
-                longitude:
-                  type: string
-                  example: "107.61568141678737"
-                type:
-                  type: string
-                  example: "1"
-                location:
-                  type: string
-                  example: "1"
-                filename_face:
-                  type: string
-                  example: "lembur_2025-11-04_wajah_1_masuk_1762239779.jpeg"
-                device_token:
-                  type: string
-                  example: "Eei723nwd987s9s23bGHS7"
-                developer:
-                  type: string
-                  example: "active"
-      responses:
-        "200":
-          description: Absen lembur berhasil disubmit
-
-  /mobile/absen-lembur/riwayat-lembur:
-    get:
-      summary: Riwayat Absen Lembur
-      tags: [Absensi - Lembur]
-      security:
-        - TokenAuth: []
-      parameters:
-        - name: period
-          in: query
-          schema:
-            type: string
-            example: "202511"
-      responses:
-        "200":
-          description: Data riwayat lembur berhasil diambil
-  /mobile/saran/insert:
-    post:
-      tags: [Personalia]
-      summary: Insert Saran Pegawai
-      security:
-        - BearerAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: "#/components/schemas/SaranPegawai"
-      responses:
-        "200":
-          description: Status insert saran
-
-  /mobile/saran/list:
-    get:
-      tags: [Personalia]
-      summary: List Saran Pegawai
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: Daftar saran pegawai
-
-  /mobile/biodata:
-    get:
-      tags: [Personalia]
-      summary: Biodata Pegawai
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: Data biodata pegawai
-
-  /mobile/berkas:
-    get:
-      tags: [Personalia]
-      summary: Berkas Pegawai
-      security:
-        - BearerAuth: []
-      responses:
-        "200":
-          description: Daftar berkas pegawai
-
-  /mobile/info-perusahaan:
-    get:
-      tags: [Personalia]
-      summary: Info / Pengumuman Perusahaan
-      responses:
-        "200":
-          description: Data pengumuman
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/InfoPerusahaan"
-
+  # ─────────────────────────────────────────
+  # PENGATURAN AKUN
+  # ─────────────────────────────────────────
   /mobile/ubah-password:
     post:
       tags: [Pengaturan Akun]
       summary: Ubah Password
-      security:
-        - BearerAuth: []
+      description: Mengubah password akun mobile pegawai
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/PasswordUpdate"
+              type: object
+              required: [old_password, new_password, confirm_new_password]
+              properties:
+                old_password:
+                  type: string
+                  example: '12345'
+                new_password:
+                  type: string
+                  example: '12345678'
+                confirm_new_password:
+                  type: string
+                  example: '12345678'
       responses:
-        "200":
-          description: Status perubahan password
+        '200':
+          description: Password berhasil diubah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Gagal ubah password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ─────────────────────────────────────────
+  # VERIFIKASI ABSEN LUAR
+  # ─────────────────────────────────────────
+  /mobile/verifikasi-absen-luar/list:
+    get:
+      tags: [Verifikasi Absen Luar]
+      summary: List Data Absen Luar
+      description: Menampilkan daftar absen luar yang perlu diverifikasi
+      responses:
+        '200':
+          description: Data absen luar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  # ─────────────────────────────────────────
+  # RFC — ENDPOINT BARU
+  # ─────────────────────────────────────────
+  /mobile-v2/absen-lembur/pre-check:
+    post:
+      tags: [RFC]
+      summary: Pre Check Sebelum Absen Lembur
+      description: |
+        Validasi ringan sebelum membuka menu absen lembur.
+        Mengecek apakah pegawai sudah absen pulang hari ini atau belum.
+
+        Cek dilakukan ke:
+        1. `absen_trans_shift` (karyawan shift) — kolom `outpresent_jam`
+        2. `absen_trans` (karyawan non-shift) — kolom `outpresent`
+
+        Nilai `NULL` dan `00:00:00` sama-sama dianggap belum absen pulang.
+
+        **Selalu mengembalikan HTTP 200** — mobile tinggal baca `boleh_lembur`.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [vdate]
+              properties:
+                vdate:
+                  type: string
+                  format: date
+                  example: '2026-04-28'
+                  description: Tanggal yang dicek (format Y-m-d)
+      responses:
+        '200':
+          description: Status absen pulang pegawai
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreCheckLemburResponse'
