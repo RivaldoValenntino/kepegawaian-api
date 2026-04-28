@@ -226,7 +226,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/upload-photo:
+  /mobile-v2/upload-photo:
     post:
       tags: [Absensi - Absen]
       summary: Upload Foto Absen
@@ -273,7 +273,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/absen-upload:
+  /mobile-v2/absen-upload:
     post:
       tags: [Absensi - Absen]
       summary: Submit Absen
@@ -320,7 +320,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/riwayat-absen:
+  /mobile-v2/riwayat-absen:
     get:
       tags: [Absensi - Absen]
       summary: Riwayat Absen Pegawai
@@ -392,7 +392,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/absen-lembur/upload-photo:
+  /mobile-v2/absen-lembur/upload-photo:
     post:
       tags: [Absensi - Lembur]
       summary: Upload Foto Lembur
@@ -426,7 +426,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/absen-lembur/insert:
+  /mobile-v2/absen-lembur/insert:
     post:
       tags: [Absensi - Lembur]
       summary: Submit Absen Lembur
@@ -476,7 +476,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/absen-lembur/riwayat-lembur:
+  /mobile-v2/absen-lembur/riwayat-lembur:
     get:
       tags: [Absensi - Lembur]
       summary: Riwayat Absen Lembur
@@ -553,7 +553,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/absen-apel/upload-photo:
+  /mobile-v2/absen-apel/upload-photo:
     post:
       tags: [Absensi - Apel]
       summary: Upload Foto Absen Apel
@@ -587,7 +587,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/absen-apel/insert:
+  /mobile-v2/absen-apel/insert:
     post:
       tags: [Absensi - Apel]
       summary: Submit Absen Apel
@@ -637,7 +637,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/absen-apel/riwayat-apel:
+  /mobile-v2/absen-apel/riwayat-apel:
     get:
       tags: [Absensi - Apel]
       summary: Riwayat Absen Apel
@@ -663,7 +663,7 @@ paths:
   # ─────────────────────────────────────────
   # IZIN / SAKIT
   # ─────────────────────────────────────────
-  /mobile/absen-pengajuan/list-data:
+  /mobile-v2/absen-pengajuan/list-data:
     get:
       tags: [Absensi - Izin & Sakit]
       summary: Riwayat Pengajuan Absen
@@ -755,7 +755,7 @@ paths:
   # ─────────────────────────────────────────
   # PERSONALIA — SARAN PEGAWAI
   # ─────────────────────────────────────────
-  /mobile/saran/insert:
+  /mobile-v2/saran/insert:
     post:
       tags: [Personalia - Saran Pegawai]
       summary: Insert Saran Pegawai
@@ -788,7 +788,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/saran/list:
+  /mobile-v2/saran/list:
     get:
       tags: [Personalia - Saran Pegawai]
       summary: List Saran Pegawai
@@ -819,7 +819,7 @@ paths:
   # ─────────────────────────────────────────
   # PERSONALIA — BIODATA & BERKAS
   # ─────────────────────────────────────────
-  /mobile/biodata:
+  /mobile-v2/biodata:
     get:
       tags: [Personalia - Biodata & Berkas]
       summary: Biodata Pegawai
@@ -882,7 +882,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile/berkas:
+  /mobile-v2/berkas:
     get:
       tags: [Personalia - Biodata & Berkas]
       summary: Berkas Pegawai
@@ -968,7 +968,7 @@ paths:
   # ─────────────────────────────────────────
   # PENGATURAN AKUN
   # ─────────────────────────────────────────
-  /mobile/ubah-password:
+  /mobile-v2/ubah-password:
     post:
       tags: [Pengaturan Akun]
       summary: Ubah Password
@@ -1007,7 +1007,7 @@ paths:
   # ─────────────────────────────────────────
   # VERIFIKASI ABSEN LUAR
   # ─────────────────────────────────────────
-  /mobile/verifikasi-absen-luar/list:
+  /mobile-v2/verifikasi-absen-luar/list:
     get:
       tags: [Verifikasi Absen Luar]
       summary: List Data Absen Luar
