@@ -10,11 +10,8 @@ info:
   version: 1.0.0
 
 servers:
-  - url: '{baseUrl}'
-    variables:
-      baseUrl:
-        default: https://kepegawaian-api.example.com/public
-        description: Base URL server
+  - url: https://kepegawaian-api.aurora.tirtapatriot.com/public
+    description: Production Server
 
 security:
   - TokenAuth: []
@@ -86,6 +83,28 @@ components:
           type: string
           example: Pegawai sudah absen pulang, dapat melakukan lembur
 
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 42
+        per_page:
+          type: integer
+          example: 10
+        current_page:
+          type: integer
+          example: 1
+        last_page:
+          type: integer
+          example: 5
+        from:
+          type: integer
+          example: 1
+        to:
+          type: integer
+          example: 10
+
 tags:
   - name: Auth
     description: Autentikasi pengguna
@@ -97,10 +116,12 @@ tags:
     description: Absen apel pegawai
   - name: Absensi - Izin & Sakit
     description: Pengajuan izin dan sakit
-  - name: Absensi - Cuti
-    description: Pengajuan cuti pegawai
-  - name: Personalia
-    description: Data personalia pegawai
+  - name: Personalia - Saran Pegawai
+    description: Saran dan keluhan dari pegawai
+  - name: Personalia - Biodata & Berkas
+    description: Biodata dan berkas dokumen pegawai
+  - name: Personalia - Info Perusahaan
+    description: Pengumuman dan informasi dari perusahaan
   - name: Pengaturan Akun
     description: Pengaturan akun pengguna
   - name: Verifikasi Absen Luar
@@ -160,6 +181,8 @@ paths:
         **type:** 1 = Masuk, 0 = Pulang
 
         **location:** 1 = Dalam Kantor, 0 = Luar Kantor
+
+        **Optional:** version (versi app), developer (developer mode)
       requestBody:
         required: true
         content:
@@ -389,7 +412,6 @@ paths:
                 filename_image:
                   type: string
                   format: binary
-                  description: Foto wajah pegawai
       responses:
         '200':
           description: Upload berhasil
@@ -488,8 +510,8 @@ paths:
         Validasi sebelum submit absen apel.
 
         Validasi meliputi:
-        - Hak absen apel pegawai (is_apel = 1)
-        - Range waktu absen dari absen_setting_apel
+        - Hak absen apel pegawai (`is_apel = 1`)
+        - Range waktu absen dari `absen_setting_apel`
         - Status sudah absen atau belum
 
         **type:** 1 = Masuk Apel, 0 = Pulang Apel
@@ -674,7 +696,7 @@ paths:
         Jika **reason = CUTI**, sistem otomatis memvalidasi:
         - Kuota cuti mencukupi
         - Pengajuan minimal H-7 dari tanggal mulai
-        - Rentang tanggal valid
+        - Rentang tanggal valid (akhir tidak boleh lebih kecil dari awal)
       requestBody:
         required: true
         content:
@@ -709,7 +731,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
-          description: Pengajuan gagal
+          description: Pengajuan gagal (kuota tidak cukup / diluar H-7 / tanggal tidak valid)
           content:
             application/json:
               schema:
@@ -731,11 +753,11 @@ paths:
                             example: 12
 
   # ─────────────────────────────────────────
-  # PERSONALIA
+  # PERSONALIA — SARAN PEGAWAI
   # ─────────────────────────────────────────
   /mobile/saran/insert:
     post:
-      tags: [Personalia]
+      tags: [Personalia - Saran Pegawai]
       summary: Insert Saran Pegawai
       description: Mengirimkan saran atau keluhan dari pegawai
       requestBody:
@@ -766,9 +788,137 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /mobile/saran/list:
+    get:
+      tags: [Personalia - Saran Pegawai]
+      summary: List Saran Pegawai
+      description: Menampilkan daftar saran yang sudah dikirim oleh pegawai
+      responses:
+        '200':
+          description: Data saran pegawai
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    title:
+                      type: string
+                      example: APK error
+                    description:
+                      type: string
+                      example: APK ERROR GABISA LOGIN WOI
+                    created_at:
+                      type: string
+                      example: '2025-11-04 08:00:00'
+
+  # ─────────────────────────────────────────
+  # PERSONALIA — BIODATA & BERKAS
+  # ─────────────────────────────────────────
+  /mobile/biodata:
+    get:
+      tags: [Personalia - Biodata & Berkas]
+      summary: Biodata Pegawai
+      description: Menampilkan data diri / biodata lengkap pegawai yang sedang login
+      responses:
+        '200':
+          description: Data biodata pegawai
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pgw_id:
+                    type: integer
+                    example: 123
+                  nama:
+                    type: string
+                    example: John Doe
+                  nup:
+                    type: string
+                    example: '0720251286'
+                  tempat:
+                    type: string
+                    example: Bandung
+                  tgl_lhr:
+                    type: string
+                    example: '1995-04-15'
+                  alamat:
+                    type: string
+                    example: Jl. Contoh No. 1
+                  sex:
+                    type: string
+                    enum: [L, P]
+                    example: L
+                  nohp:
+                    type: string
+                    example: '081234567890'
+                  email:
+                    type: string
+                    example: john@example.com
+                  dept_name:
+                    type: string
+                    example: IT
+                  occ_name:
+                    type: string
+                    example: Staff
+                  off_name:
+                    type: string
+                    example: Kantor Pusat
+                  tgl_masuk:
+                    type: string
+                    example: '2020-01-01'
+                  stts_kerja_name:
+                    type: string
+                    example: Tetap
+        '404':
+          description: Pegawai tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile/berkas:
+    get:
+      tags: [Personalia - Biodata & Berkas]
+      summary: Berkas Pegawai
+      description: Menampilkan daftar berkas / dokumen milik pegawai yang sedang login
+      responses:
+        '200':
+          description: Data berkas pegawai
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    nama_berkas:
+                      type: string
+                      example: KTP
+                    keterangan:
+                      type: string
+                      example: Kartu Tanda Penduduk
+                    tgl_upload:
+                      type: string
+                      example: '2025-01-15 10:00:00'
+                    link_berkas:
+                      type: string
+                      example: berkas/ktp_123.pdf
+
+  # ─────────────────────────────────────────
+  # PERSONALIA — INFO PERUSAHAAN
+  # ─────────────────────────────────────────
   /mobile-v2/dashboard/info-perusahaan:
     get:
-      tags: [Personalia]
+      tags: [Personalia - Info Perusahaan]
       summary: Info Perusahaan
       description: Menampilkan pengumuman dan informasi dari perusahaan dengan pagination
       parameters:
@@ -813,26 +963,7 @@ paths:
                           type: string
                           example: info/gambar.jpg
                   pagination:
-                    type: object
-                    properties:
-                      total:
-                        type: integer
-                        example: 42
-                      per_page:
-                        type: integer
-                        example: 10
-                      current_page:
-                        type: integer
-                        example: 1
-                      last_page:
-                        type: integer
-                        example: 5
-                      from:
-                        type: integer
-                        example: 1
-                      to:
-                        type: integer
-                        example: 10
+                    $ref: '#/components/schemas/PaginationMeta'
 
   # ─────────────────────────────────────────
   # PENGATURAN AKUN
@@ -867,7 +998,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
         '400':
-          description: Gagal ubah password
+          description: Gagal ubah password (password lama salah / konfirmasi tidak cocok)
           content:
             application/json:
               schema:
@@ -880,7 +1011,7 @@ paths:
     get:
       tags: [Verifikasi Absen Luar]
       summary: List Data Absen Luar
-      description: Menampilkan daftar absen luar yang perlu diverifikasi
+      description: Menampilkan daftar absen di luar kantor yang perlu diverifikasi
       responses:
         '200':
           description: Data absen luar
