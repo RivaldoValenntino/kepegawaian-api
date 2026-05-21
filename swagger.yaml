@@ -665,7 +665,7 @@ paths:
   # ─────────────────────────────────────────
   # ABSEN ISTIRAHAT
   # ─────────────────────────────────────────
-  /mobile-v2//developer-on/absen-break/check:
+  /mobile-v2/developer-on/absen-break/check:
     get:
       tags: [Absensi - Istirahat]
       summary: Cek Absen Istirahat
