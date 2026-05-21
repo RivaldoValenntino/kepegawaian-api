@@ -776,7 +776,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /mobile-v2/absen-break/riwayat-break:
+  /mobile-v2/absen-break/list:
     get:
       tags: [Absensi - Istirahat]
       summary: Riwayat Absen Istirahat
