@@ -114,6 +114,8 @@ tags:
     description: Absen lembur pegawai
   - name: Absensi - Apel
     description: Absen apel pegawai
+  - name: Absensi - Istirahat
+    description: Absen istirahat pegawai
   - name: Absensi - Izin & Sakit
     description: Pengajuan izin dan sakit
   - name: Personalia - Saran Pegawai
@@ -653,6 +655,143 @@ paths:
       responses:
         '200':
           description: Data riwayat apel
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  # ─────────────────────────────────────────
+  # ABSEN ISTIRAHAT
+  # ─────────────────────────────────────────
+  /mobile-v2/absen-break/check:
+    get:
+      tags: [Absensi - Istirahat]
+      summary: Cek Absen Istirahat
+      description: |
+        Validasi sebelum submit absen istirahat.
+
+        Mengecek status istirahat pegawai saat ini (apakah sudah mulai/selesai istirahat).
+      responses:
+        '200':
+          description: Validasi berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AbsenCheckResponse'
+        '400':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile-v2/absen-break/upload-photo:
+    post:
+      tags: [Absensi - Istirahat]
+      summary: Upload Foto Absen Istirahat
+      description: |
+        Upload foto wajah untuk keperluan absen istirahat.
+
+        **type:** 1 = Mulai Istirahat, 0 = Selesai Istirahat
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [type, filename_image]
+              properties:
+                type:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                filename_image:
+                  type: string
+                  format: binary
+                  description: Foto wajah pegawai
+      responses:
+        '200':
+          description: Upload berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Upload gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile-v2/absen-break/insert:
+    post:
+      tags: [Absensi - Istirahat]
+      summary: Submit Absen Istirahat
+      description: Submit absen istirahat setelah upload foto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                latitude:
+                  type: string
+                  example: '-6.940672003410164'
+                longitude:
+                  type: string
+                  example: '107.61568141678737'
+                type:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                  description: "1 = Mulai Istirahat, 0 = Selesai Istirahat"
+                location:
+                  type: integer
+                  enum: [0, 1]
+                  example: 1
+                  description: "1 = Dalam Kantor, 0 = Luar Kantor"
+                filename_face:
+                  type: string
+                  example: break_2025-11-04_wajah_1_masuk_1762239779.jpeg
+                device_token:
+                  type: string
+                  example: Eei723nwd987s9s23bGHS7
+                developer:
+                  type: string
+                  example: active
+      responses:
+        '200':
+          description: Absen istirahat berhasil disubmit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Submit gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile-v2/absen-break/riwayat-break:
+    get:
+      tags: [Absensi - Istirahat]
+      summary: Riwayat Absen Istirahat
+      description: Menampilkan riwayat absen istirahat pegawai per periode
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            example: '202511'
+          description: Periode dalam format YYYYMM
+      responses:
+        '200':
+          description: Data riwayat istirahat
           content:
             application/json:
               schema:
