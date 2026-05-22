@@ -105,6 +105,131 @@ components:
           type: integer
           example: 10
 
+    PengajuanItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1065
+        pgw_id:
+          type: integer
+          example: 12
+        nup:
+          type: string
+          example: '0720251286'
+        nama:
+          type: string
+          example: John Doe
+        dept_id:
+          type: integer
+          example: 3
+        subdept_id:
+          type: integer
+          example: 7
+        occ_id:
+          type: integer
+          example: 5
+        level:
+          type: integer
+          example: 3
+          description: "Level occupation pegawai (2=Manajer, 3=Asmen)"
+        alasan:
+          type: string
+          example: Izin Sakit
+        alasan_id:
+          type: integer
+          example: 2
+        alasan_ket:
+          type: string
+          example: Keterangan alasan
+        alasan_kode:
+          type: string
+          example: ISK
+        keterangan:
+          type: string
+          example: Demam tinggi
+        tanggal_pengajuan:
+          type: string
+          format: date
+          example: '2026-05-01'
+        tanggal_awal:
+          type: string
+          format: date
+          example: '2026-05-02'
+        tanggal_akhir:
+          type: string
+          format: date
+          example: '2026-05-03'
+        lampiran:
+          type: string
+          nullable: true
+          example: 'https://kepegawaian-api.aurora.tirtapatriot.com/public/img_pengajuan/surat.pdf'
+        approve_1:
+          type: integer
+          nullable: true
+          example: 1
+          description: "NULL = belum diproses, 1 = disetujui, 0 = ditolak"
+        approve_2:
+          type: integer
+          nullable: true
+          example: null
+          description: "NULL = belum diproses, 1 = disetujui, 0 = ditolak"
+        approve_3:
+          type: integer
+          nullable: true
+          example: null
+          description: "NULL = belum diproses, 1 = disetujui, 0 = ditolak"
+        approve_1_dt:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2026-05-01 09:00:00'
+        approve_2_dt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        approve_3_dt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        approve_1_user:
+          type: string
+          nullable: true
+          example: Admin SDM
+        approve_2_user:
+          type: string
+          nullable: true
+          example: null
+        approve_3_user:
+          type: string
+          nullable: true
+          example: null
+        catatan_1:
+          type: string
+          nullable: true
+          example: null
+          description: Catatan penolakan dari level 1 (ADM/SDM)
+        catatan_2:
+          type: string
+          nullable: true
+          example: null
+          description: Catatan penolakan dari level 2 (Manajer)
+        catatan_3:
+          type: string
+          nullable: true
+          example: Ga valid
+          description: Catatan penolakan dari level 3 (Asmen)
+        create_dt:
+          type: string
+          format: date-time
+          example: '2026-05-01 08:00:00'
+        update_dt:
+          type: string
+          format: date-time
+          example: '2026-05-01 09:00:00'
+
 tags:
   - name: Auth
     description: Autentikasi pengguna
@@ -128,6 +253,16 @@ tags:
     description: Pengaturan akun pengguna
   - name: Verifikasi Absen Luar
     description: Verifikasi absen di luar kantor
+  - name: Verifikasi Absen Pengajuan
+    description: |
+      Verifikasi pengajuan izin/sakit/cuti bawahan oleh atasan.
+
+      **Approval berdasarkan level occupation:**
+      - Level 2 (Manajer) → mengisi `approve_2`
+      - Level 3 (Asmen) → mengisi `approve_3`
+      - Level 1 (ADM/SDM) → hanya via Web
+
+      **Nilai approve:** `NULL` = belum diproses, `1` = disetujui, `0` = ditolak
   - name: RFC
     description: Request For Change — endpoint baru dalam pengembangan
 
@@ -1160,6 +1295,224 @@ paths:
                 type: array
                 items:
                   type: object
+
+  # ─────────────────────────────────────────
+  # VERIFIKASI ABSEN PENGAJUAN
+  # ─────────────────────────────────────────
+  /mobile-v2/verifikasi-absen-pengajuan/list:
+    get:
+      tags: [Verifikasi Absen Pengajuan]
+      summary: List Pengajuan Bawahan
+      description: |
+        Menampilkan daftar pengajuan izin/sakit/cuti dari bawahan yang perlu diverifikasi.
+
+        Data difilter otomatis berdasarkan level dan scope subdepartemen atasan yang login.
+        Hanya menampilkan pegawai dengan level occupation **lebih besar** dari si atasan.
+
+        Hasil dibagi menjadi dua grup:
+        - `done` — pengajuan yang sudah diverifikasi semua level
+        - `undone` — pengajuan yang belum/sedang proses verifikasi
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            example: '202605'
+          description: Periode dalam format YYYYMM
+        - name: search_nama
+          in: query
+          required: false
+          schema:
+            type: string
+            example: Tes
+          description: Filter nama pegawai (partial match)
+        - name: search_nup
+          in: query
+          required: false
+          schema:
+            type: string
+            example: '0720251286'
+          description: Filter NUP pegawai (exact match)
+        - name: alasan_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 2
+          description: Filter berdasarkan ID alasan pengajuan
+      responses:
+        '200':
+          description: Data pengajuan bawahan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  done:
+                    type: array
+                    description: Pengajuan yang sudah diverifikasi semua level
+                    items:
+                      $ref: '#/components/schemas/PengajuanItem'
+                  undone:
+                    type: array
+                    description: Pengajuan yang belum/sedang proses verifikasi
+                    items:
+                      $ref: '#/components/schemas/PengajuanItem'
+
+  /mobile-v2/verifikasi-absen-pengajuan/verify:
+    post:
+      tags: [Verifikasi Absen Pengajuan]
+      summary: Verifikasi Pengajuan
+      description: |
+        Menyetujui pengajuan izin/sakit/cuti bawahan.
+
+        Kolom approve yang diupdate ditentukan otomatis dari level occupation atasan yang login:
+        - **Level 2 (Manajer)** → `approve_2 = 1`
+        - **Level 3 (Asmen)** → `approve_3 = 1`
+
+        Endpoint akan menolak jika pengajuan sudah diverifikasi di level yang sama sebelumnya.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                  example: 1065
+                  description: ID pengajuan absen
+      responses:
+        '200':
+          description: Pengajuan berhasil diverifikasi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Gagal verifikasi (sudah diverifikasi sebelumnya / data tidak ditemukan)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Level jabatan tidak memiliki akses verifikasi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pegawai atau data pengajuan tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile-v2/verifikasi-absen-pengajuan/unverify:
+    post:
+      tags: [Verifikasi Absen Pengajuan]
+      summary: Batalkan Verifikasi Pengajuan
+      description: |
+        Membatalkan verifikasi yang sudah diberikan (reset approve ke NULL).
+
+        Kolom yang direset ditentukan otomatis dari level occupation atasan yang login:
+        - **Level 2 (Manajer)** → `approve_2 = NULL`, `approve_2_dt = NULL`, `approve_2_user = NULL`
+        - **Level 3 (Asmen)** → `approve_3 = NULL`, `approve_3_dt = NULL`, `approve_3_user = NULL`
+
+        Endpoint akan menolak jika pengajuan belum pernah diverifikasi di level yang sama.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                  example: 1065
+                  description: ID pengajuan absen
+      responses:
+        '200':
+          description: Verifikasi berhasil dibatalkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Gagal membatalkan (belum diverifikasi / data tidak ditemukan)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Level jabatan tidak memiliki akses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pegawai atau data pengajuan tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile-v2/verifikasi-absen-pengajuan/reject:
+    post:
+      tags: [Verifikasi Absen Pengajuan]
+      summary: Tolak Pengajuan
+      description: |
+        Menolak pengajuan izin/sakit/cuti bawahan disertai catatan alasan penolakan.
+
+        Kolom approve yang diupdate ditentukan otomatis dari level occupation atasan yang login:
+        - **Level 2 (Manajer)** → `approve_2 = 0`, `approve_2_dt`, `approve_2_user`, `catatan_2` diisi
+        - **Level 3 (Asmen)** → `approve_3 = 0`, `approve_3_dt`, `approve_3_user`, `catatan_3` diisi
+
+        Endpoint akan menolak jika pengajuan sudah ditolak di level yang sama sebelumnya.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [id, catatan]
+              properties:
+                id:
+                  type: integer
+                  example: 1065
+                  description: ID pengajuan absen
+                catatan:
+                  type: string
+                  example: Ga valid
+                  description: Alasan penolakan pengajuan
+      responses:
+        '200':
+          description: Pengajuan berhasil ditolak
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Gagal menolak (sudah ditolak sebelumnya / data tidak ditemukan)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Level jabatan tidak memiliki akses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Pegawai atau data pengajuan tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # ─────────────────────────────────────────
   # RFC — ENDPOINT BARU
