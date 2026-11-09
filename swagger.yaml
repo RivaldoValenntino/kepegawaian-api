@@ -10,8 +10,10 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://kepegawaian-api.aurora.tirtapatriot.com/public
+  - url: https://kepegawaian-api.tirtapatriot.com
     description: Production Server
+  - url: https://kepegawaian-api.staging.tirtapatriot.com
+    description: Staging Server
 
 security:
   - TokenAuth: []
