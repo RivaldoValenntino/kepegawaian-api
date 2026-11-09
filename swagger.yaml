@@ -808,6 +808,225 @@ components:
                 nullable: true
                 example: "Pengawasan zona 1"
 
+    AlokasiLemburEditResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Data alokasi lembur untuk form edit berhasil dimuat
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            tanggal:
+              type: string
+              example: "2026-11-08"
+            tgl_masuk:
+              type: string
+              example: "2026-11-08"
+            tanggal_pulang:
+              type: string
+              example: "2026-11-08"
+            tgl_pulang:
+              type: string
+              example: "2026-11-08"
+            dept_id:
+              type: integer
+              example: 33
+            dept_name:
+              type: string
+              example: "Bagian Pelayanan Zona Satu"
+            subdept_id:
+              type: integer
+              nullable: true
+              example: 80
+            subdept_name:
+              type: string
+              nullable: true
+              example: "Sub Bagian Meter Air"
+            rencana_dari_jam:
+              type: string
+              example: "08:00"
+            jam_mulai:
+              type: string
+              example: "08:00"
+            rencana_sampai_jam:
+              type: string
+              example: "16:00"
+            jam_selesai:
+              type: string
+              example: "16:00"
+            keterangan:
+              type: string
+              example: "Pekerjaan Pengawasan Lapangan & Pengaduan"
+            pekerjaan:
+              type: string
+              example: "Pekerjaan Pengawasan Lapangan & Pengaduan"
+            approval_1_nama:
+              type: string
+              nullable: true
+            approval_1_jabatan:
+              type: string
+              nullable: true
+            approval_2_nama:
+              type: string
+              nullable: true
+            approval_2_jabatan:
+              type: string
+              nullable: true
+            approval_3_nama:
+              type: string
+              nullable: true
+            approval_3_jabatan:
+              type: string
+              nullable: true
+            total_pegawai:
+              type: integer
+              example: 2
+            pegawai:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 101
+                  pgw_id:
+                    type: integer
+                    example: 542
+                  nip:
+                    type: string
+                    example: "198801012015011002"
+                  nama:
+                    type: string
+                    example: "Ahmad Subarjo"
+                  jabatan:
+                    type: string
+                    example: "Staf Meter Air"
+                  nama_bagian:
+                    type: string
+                    example: "Bagian Pelayanan Zona Satu"
+                  dari_jam:
+                    type: string
+                    example: "08:00"
+                  sampai_jam:
+                    type: string
+                    example: "16:00"
+                  keterangan:
+                    type: string
+                    example: "Pengawasan zona 1"
+
+    AlokasiLemburUpdateRequest:
+      type: object
+      required: [id, tanggal, dept_id, keterangan, detail]
+      properties:
+        id:
+          type: integer
+          example: 1
+          description: "ID jadwal alokasi lembur yang akan diupdate (wajib > 0)"
+        tanggal:
+          type: string
+          format: date
+          example: "2026-11-08"
+          description: "Tanggal masuk lembur (format Y-m-d)"
+        tgl_masuk:
+          type: string
+          example: "2026-11-08"
+          description: "Alias tanggal masuk"
+        tanggal_pulang:
+          type: string
+          format: date
+          example: "2026-11-08"
+          description: "Tanggal pulang lembur"
+        tgl_pulang:
+          type: string
+          example: "2026-11-08"
+          description: "Alias tanggal pulang"
+        dept_id:
+          type: integer
+          example: 33
+          description: "ID Bagian"
+        subdept_id:
+          type: integer
+          nullable: true
+          example: 80
+          description: "ID Sub Bagian"
+        bagian_label:
+          type: string
+          nullable: true
+          example: "Bagian Pelayanan Zona Satu"
+        rencana_dari_jam:
+          type: string
+          example: "08:00"
+          description: "Default jam mulai lembur"
+        jam_mulai:
+          type: string
+          example: "08:00"
+          description: "Alias default jam mulai"
+        rencana_sampai_jam:
+          type: string
+          example: "16:00"
+          description: "Default jam selesai lembur"
+        jam_selesai:
+          type: string
+          example: "16:00"
+          description: "Alias default jam selesai"
+        keterangan:
+          type: string
+          example: "Pekerjaan Pengawasan Lapangan & Pengaduan"
+          description: "Uraian pelaksanaan pekerjaan lembur"
+        pekerjaan:
+          type: string
+          example: "Pekerjaan Pengawasan Lapangan & Pengaduan"
+          description: "Alias keterangan"
+        role_key:
+          type: string
+          example: "definitif"
+          description: "Kunci unit yang aktif digunakan ('definitif' / 'interim_x')"
+        approval_1_nama:
+          type: string
+          nullable: true
+        approval_1_jabatan:
+          type: string
+          nullable: true
+        approval_2_nama:
+          type: string
+          nullable: true
+        approval_2_jabatan:
+          type: string
+          nullable: true
+        approval_3_nama:
+          type: string
+          nullable: true
+        approval_3_jabatan:
+          type: string
+          nullable: true
+        detail:
+          type: array
+          description: "Daftar pegawai lembur yang diperbarui (minimal 1)"
+          items:
+            type: object
+            required: [pgw_id]
+            properties:
+              pgw_id:
+                type: integer
+                example: 123
+              rencana_dari_jam:
+                type: string
+                example: "08:00"
+              rencana_sampai_jam:
+                type: string
+                example: "16:00"
+              keterangan:
+                type: string
+                nullable: true
+                example: "Pengawasan zona 1"
+
 tags:
   - name: Auth
     description: Autentikasi pengguna
@@ -2554,6 +2773,56 @@ paths:
               schema:
                 $ref: '#/components/schemas/AlokasiLemburDetailResponse'
 
+  /mobile-v2/alokasi-lembur/edit:
+    get:
+      tags: [Alokasi Lembur]
+      summary: Ambil Data Jadwal Lembur untuk Form Edit
+      description: |
+        Mengambil data alokasi lembur yang sudah ada (header + daftar pegawai terpilih beserta jam & uraian tugasnya)
+        untuk di-prefill ke Form Edit / Pengajuan di Flutter mobile.
+        Sama dengan behavior tombol "Edit" pada versi web Alokasi Lembur.
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 1
+          description: ID Alokasi Lembur yang akan diedit (spkl_id)
+        - name: role_key
+          in: query
+          required: false
+          schema:
+            type: string
+            example: 'definitif'
+      responses:
+        '200':
+          description: Data alokasi lembur untuk form edit berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlokasiLemburEditResponse'
+        '400':
+          description: ID Alokasi Lembur tidak valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Tidak memiliki hak akses
+        '404':
+          description: Data Alokasi Lembur tidak ditemukan
+    post:
+      tags: [Alokasi Lembur]
+      summary: Ambil Data Jadwal Lembur untuk Form Edit (POST Alternative)
+      responses:
+        '200':
+          description: Data alokasi lembur untuk form edit berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlokasiLemburEditResponse'
+
   /mobile-v2/alokasi-lembur/store:
     post:
       tags: [Alokasi Lembur]
@@ -2607,6 +2876,73 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile-v2/alokasi-lembur/update:
+    post:
+      tags: [Alokasi Lembur]
+      summary: Perbarui (Update) Data Jadwal Lembur
+      description: |
+        Memperbarui jadwal lembur yang sudah ada berdasarkan parameter `id`.
+        - Memperbarui header lembur (tanggal, bagian, uraian pekerjaan, jam default).
+        - Memperbarui daftar pegawai lembur (menghapus rincian lama dan mengganti dengan rincian baru).
+        - Memvalidasi bentrok jadwal lembur (`checkBentrokLembur`) pegawai.
+        - Memperbarui / sinkronisasi data absensi lembur di `kepegawaian.absen_trans_lembur`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlokasiLemburUpdateRequest'
+      responses:
+        '200':
+          description: Jadwal lembur berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Jadwal lembur berhasil diperbarui!"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '403':
+          description: Tidak memiliki hak akses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validasi input gagal / ID belum diisi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Gagal memperbarui lembur (misal bentrok jadwal)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Alokasi Lembur]
+      summary: Perbarui (Update) Data Jadwal Lembur (PUT Alternative)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlokasiLemburUpdateRequest'
+      responses:
+        '200':
+          description: Jadwal lembur berhasil diperbarui
 
   /mobile-v2/alokasi-lembur/delete:
     post:
