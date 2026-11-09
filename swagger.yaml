@@ -10,9 +10,9 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://kepegawaian-api.tirtapatriot.com
+  - url: https://kepegawaian.api.tirtapatriot.co
     description: Production Server
-  - url: https://kepegawaian-api.staging.tirtapatriot.com
+  - url: https://kepegawaian.api.staging.tirtapatriot.co
     description: Staging Server
 
 security:
