@@ -15,6 +15,7 @@ servers:
 
 security:
   - TokenAuth: []
+  - BearerAuth: []
 
 components:
   securitySchemes:
@@ -22,6 +23,10 @@ components:
       type: apiKey
       in: header
       name: token
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   schemas:
     SuccessResponse:
@@ -50,6 +55,12 @@ components:
         token:
           type: string
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        must_change_password:
+          type: boolean
+          example: false
+        user:
+          type: object
+          description: Data profile pegawai yang berhasil login
 
     AbsenCheckResponse:
       type: object
@@ -230,9 +241,579 @@ components:
           format: date-time
           example: '2026-05-01 09:00:00'
 
+    # ─────────────────────────────────────────
+    # SCHEMAS: ALOKASI JADWAL LEMBUR
+    # ─────────────────────────────────────────
+    UserUnitItem:
+      type: object
+      properties:
+        key:
+          type: string
+          example: "definitif"
+          description: "Key unik unit/peran ('definitif' atau 'interim_x')"
+        type:
+          type: string
+          example: "definitif"
+          enum: [definitif, interim]
+        badge:
+          type: string
+          example: "Definitif"
+          description: "Badge peran ('Definitif', 'Plt', 'Pj', 'Interim')"
+        display_name:
+          type: string
+          example: "Sub Bagian Meter Air"
+        dept_id:
+          type: integer
+          example: 33
+        dept_name:
+          type: string
+          example: "Bagian Pelayanan Zona Satu"
+        dept_code:
+          type: string
+          example: "Z1"
+        subdept_id:
+          type: integer
+          example: 80
+        subdept_name:
+          type: string
+          example: "Sub Bagian Meter Air"
+        subdept_code:
+          type: string
+          example: "MA"
+        is_manager:
+          type: boolean
+          example: false
+          description: "true jika posisi adalah Kepala Bagian / Manajer / Plt Kabag"
+        nama_jabatan:
+          type: string
+          example: "Kepala Sub Bagian Meter Air"
+
+    UserContextResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Data context pengguna berhasil dimuat
+        data:
+          type: object
+          properties:
+            user:
+              type: object
+              properties:
+                pgw_id:
+                  type: integer
+                  example: 102
+                nama:
+                  type: string
+                  example: "Agus Harpa Senjaya, S.IP., M.SI."
+                nip:
+                  type: string
+                  example: "102 314 161"
+                nup:
+                  type: string
+                  example: "102 314 161"
+                jabatan:
+                  type: string
+                  example: "Kepala Sub Bagian Meter Air"
+                level:
+                  type: integer
+                  example: 3
+            is_admin:
+              type: boolean
+              example: false
+            has_interim:
+              type: boolean
+              example: true
+            active_role_key:
+              type: string
+              example: "definitif"
+            active_unit:
+              $ref: '#/components/schemas/UserUnitItem'
+            user_units:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserUnitItem'
+
+    RefDepartmentItem:
+      type: object
+      properties:
+        dept_id:
+          type: integer
+          example: 33
+        dept_code:
+          type: string
+          example: "Z1"
+        dept_name:
+          type: string
+          example: "Bagian Pelayanan Zona Satu"
+        label:
+          type: string
+          example: "Bagian Pelayanan Zona Satu"
+        value:
+          type: integer
+          example: 33
+
+    RefDepartmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Daftar Bagian berhasil dimuat
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RefDepartmentItem'
+
+    RefSubDepartmentItem:
+      type: object
+      properties:
+        subdept_id:
+          type: integer
+          example: 80
+        subdept_code:
+          type: string
+          example: "MA"
+        subdept_name:
+          type: string
+          example: "Sub Bagian Meter Air"
+        dept_id:
+          type: integer
+          example: 33
+        is_also_dept:
+          type: integer
+          example: 0
+        label:
+          type: string
+          example: "Sub Bagian Meter Air"
+        value:
+          type: integer
+          example: 80
+
+    RefSubDepartmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Daftar Sub Bagian berhasil dimuat
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RefSubDepartmentItem'
+
+    RefPegawaiItem:
+      type: object
+      properties:
+        pgw_id:
+          type: integer
+          example: 123
+        nama:
+          type: string
+          example: "Adi Rusmiadi, SM."
+        name:
+          type: string
+          example: "Adi Rusmiadi, SM."
+        nip:
+          type: string
+          example: "102 323 325"
+        nup:
+          type: string
+          example: "102 323 325"
+        jabatan:
+          type: string
+          example: "Staf Meter Air"
+        dept_id:
+          type: integer
+          example: 33
+        dept_name:
+          type: string
+          example: "Bagian Pelayanan Zona Satu"
+        subdept_id:
+          type: integer
+          example: 80
+        subdept_name:
+          type: string
+          example: "Sub Bagian Meter Air"
+        label:
+          type: string
+          example: "Adi Rusmiadi, SM. (102 323 325)"
+        value:
+          type: integer
+          example: 123
+
+    RefPegawaiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Daftar pegawai berhasil dimuat
+        data:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 25
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 50
+            has_more:
+              type: boolean
+              example: false
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/RefPegawaiItem'
+
+    AlokasiLemburCardItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        no:
+          type: integer
+          example: 1
+        tanggal:
+          type: string
+          format: date
+          example: "2026-11-08"
+        tanggal_indonesia:
+          type: string
+          example: "8 November 2026"
+        tglMasuk:
+          type: string
+          example: "8 November 2026"
+        tanggal_pulang:
+          type: string
+          format: date
+          example: "2026-11-08"
+        tanggal_pulang_indonesia:
+          type: string
+          example: "8 November 2026"
+        tglPulang:
+          type: string
+          example: "8 November 2026"
+        dept_id:
+          type: integer
+          example: 33
+        dept_name:
+          type: string
+          example: "Bagian Pelayanan Zona Satu"
+        bagian:
+          type: string
+          example: "Bagian Pelayanan Zona Satu"
+        subdept_id:
+          type: integer
+          example: 80
+        subdept_name:
+          type: string
+          example: "Sub Bagian Meter Air"
+        subBagian:
+          type: string
+          example: "Sub Bagian Meter Air"
+        jam_rencana:
+          type: string
+          example: "08:00 – 16:00"
+        jamRencana:
+          type: string
+          example: "08:00 – 16:00"
+        rencana_dari_jam:
+          type: string
+          example: "08:00"
+        rencana_sampai_jam:
+          type: string
+          example: "16:00"
+        jumlah_pegawai:
+          type: integer
+          example: 25
+        jmlPegawai:
+          type: integer
+          example: 25
+        keterangan:
+          type: string
+          example: "Pekerjaan Pengawasan Lapangan & Pengaduan"
+        can_delete:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          example: "2026-11-08 07:30:00"
+
+    AlokasiLemburListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Daftar riwayat lembur berhasil dimuat
+        data:
+          type: object
+          properties:
+            total:
+              type: integer
+              example: 5
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 20
+            has_more:
+              type: boolean
+              example: false
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AlokasiLemburCardItem'
+
+    AlokasiLemburPegawaiDetail:
+      type: object
+      properties:
+        no:
+          type: integer
+          example: 1
+        detail_id:
+          type: integer
+          example: 101
+        pgw_id:
+          type: integer
+          example: 123
+        nama:
+          type: string
+          example: "Adi Rusmiadi, SM."
+        name:
+          type: string
+          example: "Adi Rusmiadi, SM."
+        nip:
+          type: string
+          example: "102 323 325"
+        nup:
+          type: string
+          example: "102 323 325"
+        rencana:
+          type: string
+          example: "08:00 – 16:00"
+        rencana_dari_jam:
+          type: string
+          example: "08:00"
+        rencana_sampai_jam:
+          type: string
+          example: "16:00"
+        realisasi_dari_jam:
+          type: string
+          example: "07:55"
+        realisasi_sampai_jam:
+          type: string
+          example: "16:05"
+        masuk:
+          type: string
+          example: "07:55"
+        keluar:
+          type: string
+          example: "16:05"
+        durasi:
+          type: string
+          example: "8j 10m"
+        hadir:
+          type: boolean
+          example: true
+        keterangan:
+          type: string
+          example: "Pengawasan zona 1"
+
+    AlokasiLemburDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Detail alokasi lembur berhasil dimuat
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            tanggal:
+              type: string
+              example: "2026-11-08"
+            tanggal_indonesia:
+              type: string
+              example: "8 November 2026"
+            tanggal_pulang:
+              type: string
+              example: "2026-11-08"
+            tanggal_pulang_indonesia:
+              type: string
+              example: "8 November 2026"
+            dept_id:
+              type: integer
+              example: 33
+            dept_name:
+              type: string
+              example: "Bagian Pelayanan Zona Satu"
+            subdept_id:
+              type: integer
+              example: 80
+            subdept_name:
+              type: string
+              example: "Sub Bagian Meter Air"
+            jam_rencana:
+              type: string
+              example: "08:00 – 16:00"
+            rencana_dari_jam:
+              type: string
+              example: "08:00"
+            rencana_sampai_jam:
+              type: string
+              example: "16:00"
+            keterangan:
+              type: string
+              example: "Pekerjaan Pengawasan Lapangan & Pengaduan"
+            subtitle:
+              type: string
+              example: "8 November 2026 | Sub Bagian Meter Air"
+            total_pegawai:
+              type: integer
+              example: 25
+            total_hadir:
+              type: integer
+              example: 0
+            total_belum:
+              type: integer
+              example: 25
+            pegawai:
+              type: array
+              items:
+                $ref: '#/components/schemas/AlokasiLemburPegawaiDetail'
+
+    AlokasiLemburStoreRequest:
+      type: object
+      required: [tanggal, dept_id, keterangan, detail]
+      properties:
+        id:
+          type: integer
+          nullable: true
+          example: null
+          description: "Diisi integer ID jadwal jika update, kosong/null jika insert baru"
+        tanggal:
+          type: string
+          format: date
+          example: "2026-11-08"
+          description: "Tanggal masuk lembur (format Y-m-d)"
+        tgl_masuk:
+          type: string
+          example: "2026-11-08"
+          description: "Alias tanggal masuk"
+        tanggal_pulang:
+          type: string
+          format: date
+          example: "2026-11-08"
+          description: "Tanggal pulang lembur (default sama dengan tanggal masuk)"
+        tgl_pulang:
+          type: string
+          example: "2026-11-08"
+          description: "Alias tanggal pulang"
+        dept_id:
+          type: integer
+          example: 33
+          description: "ID Bagian"
+        subdept_id:
+          type: integer
+          nullable: true
+          example: 80
+          description: "ID Sub Bagian"
+        bagian_label:
+          type: string
+          nullable: true
+          example: "Bagian Pelayanan Zona Satu"
+        rencana_dari_jam:
+          type: string
+          example: "08:00"
+          description: "Default jam mulai lembur"
+        jam_mulai:
+          type: string
+          example: "08:00"
+          description: "Alias default jam mulai"
+        rencana_sampai_jam:
+          type: string
+          example: "16:00"
+          description: "Default jam selesai lembur"
+        jam_selesai:
+          type: string
+          example: "16:00"
+          description: "Alias default jam selesai"
+        keterangan:
+          type: string
+          example: "Pekerjaan Pengawasan Lapangan & Pengaduan"
+          description: "Uraian pelaksanaan pekerjaan lembur"
+        pekerjaan:
+          type: string
+          example: "Pekerjaan Pengawasan Lapangan & Pengaduan"
+          description: "Alias keterangan"
+        role_key:
+          type: string
+          example: "definitif"
+          description: "Kunci unit yang aktif digunakan ('definitif' / 'interim_x')"
+        approval_1_nama:
+          type: string
+          nullable: true
+        approval_1_jabatan:
+          type: string
+          nullable: true
+        approval_2_nama:
+          type: string
+          nullable: true
+        approval_2_jabatan:
+          type: string
+          nullable: true
+        detail:
+          type: array
+          description: "Daftar pegawai lembur (minimal 1)"
+          items:
+            type: object
+            required: [pgw_id]
+            properties:
+              pgw_id:
+                type: integer
+                example: 123
+              rencana_dari_jam:
+                type: string
+                example: "08:00"
+              rencana_sampai_jam:
+                type: string
+                example: "16:00"
+              keterangan:
+                type: string
+                nullable: true
+                example: "Pengawasan zona 1"
+
 tags:
   - name: Auth
     description: Autentikasi pengguna
+  - name: Alokasi Lembur
+    description: |
+      Manajemen Alokasi Jadwal Lembur Pegawai (Flutter Mobile).
+      Mendukung multi-peran (Jabatan Definitif dan Interim / Plt / Pj),
+      filtering bawahan aktif, validasi bentrok jadwal lembur, dan sinkronisasi otomatis ke absen_trans_lembur.
   - name: Absensi - Absen
     description: Absen masuk dan pulang harian
   - name: Absensi - Lembur
@@ -274,12 +855,40 @@ paths:
   /mobile-v2/login:
     post:
       tags: [Auth]
-      summary: Login
-      description: Login pegawai dan mendapatkan JWT token
+      summary: Login Pegawai
+      description: |
+        Login pegawai dan mendapatkan JWT token.
+        - **Password**: Diverifikasi menggunakan bcrypt hash (cost 10).
+        - **Device Lock**:
+          - Jika `device_token` pegawai di database masih `NULL`, maka `device_token` baru akan diupdate dan pegawai boleh login.
+          - Jika `device_token` tidak sama dengan perangkat terdaftar, sistem menolak login dengan pesan: *"Anda terdeteksi login menggunakan perangkat lain"*.
       security: []
       requestBody:
         required: true
         content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: '0720251286'
+                password:
+                  type: string
+                  example: 'password123'
+                device_token:
+                  type: string
+                  nullable: true
+                  example: 'fcm_token_device_abc123...'
+                device_id:
+                  type: string
+                  nullable: true
+                  example: 'android_device_id_uuid'
+                version:
+                  type: string
+                  nullable: true
+                  example: '2.1.0'
           multipart/form-data:
             schema:
               type: object
@@ -290,7 +899,19 @@ paths:
                   example: '0720251286'
                 password:
                   type: string
-                  example: '1234'
+                  example: 'password123'
+                device_token:
+                  type: string
+                  nullable: true
+                  example: 'fcm_token_device_abc123...'
+                device_id:
+                  type: string
+                  nullable: true
+                  example: 'android_device_id_uuid'
+                version:
+                  type: string
+                  nullable: true
+                  example: '2.1.0'
       responses:
         '200':
           description: Login berhasil
@@ -299,7 +920,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
         '400':
-          description: Username atau password salah
+          description: Gagal login (Username/password salah, akun terkunci, atau terdeteksi perangkat lain)
           content:
             application/json:
               schema:
@@ -966,18 +1587,16 @@ paths:
       summary: Insert Pengajuan Izin/Cuti
       description: |
         Mengajukan izin, sakit, atau cuti.
-
-        Jika **reason = CUTI**, sistem otomatis memvalidasi:
-        - Kuota cuti mencukupi
-        - Pengajuan minimal H-7 dari tanggal mulai
-        - Rentang tanggal valid (akhir tidak boleh lebih kecil dari awal)
+        - **Validasi**: Reason, Keterangan, Tanggal Mulai, Tanggal Selesai, dan File Lampiran wajib ada dengan pesan berbahasa Indonesia yang jelas.
+        - Jika **reason = CUTI** atau **is_potong_cuti = 1**, sistem memvalidasi kuota cuti tahunan pegawai via `sp_mobile_cek_kuota_cuti`.
+        - Jika **reason = IZIN**, sistem memvalidasi kuota izin pegawai via `sp_cek_kuota_izin`.
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
-              required: [reason, start_date, end_date]
+              required: [reason, description, start_date, end_date, filename]
               properties:
                 reason:
                   type: string
@@ -988,15 +1607,58 @@ paths:
                   example: Keperluan keluarga
                 start_date:
                   type: string
-                  example: 04 November 2025
-                  description: Format tanggal Indonesia (dd MMMM YYYY)
+                  example: 04 November 2026
+                  description: Format tanggal Indonesia (dd MMMM YYYY) atau Y-m-d
                 end_date:
                   type: string
-                  example: 06 November 2025
-                  description: Format tanggal Indonesia (dd MMMM YYYY)
+                  example: 06 November 2026
+                  description: Format tanggal Indonesia (dd MMMM YYYY) atau Y-m-d
                 filename:
                   type: string
                   example: surat_izin_001.pdf
+                alasan_id:
+                  type: integer
+                  nullable: true
+                  example: 1
+                  description: ID alasan / jenis cuti
+                is_potong_cuti:
+                  type: integer
+                  nullable: true
+                  example: 1
+                  description: Set 1 jika memotong kuota cuti
+          multipart/form-data:
+            schema:
+              type: object
+              required: [reason, description, start_date, end_date, filename]
+              properties:
+                reason:
+                  type: string
+                  enum: [IZIN, SAKIT, CUTI]
+                  example: CUTI
+                description:
+                  type: string
+                  example: Keperluan keluarga
+                start_date:
+                  type: string
+                  example: 04 November 2026
+                  description: Format tanggal Indonesia (dd MMMM YYYY) atau Y-m-d
+                end_date:
+                  type: string
+                  example: 06 November 2026
+                  description: Format tanggal Indonesia (dd MMMM YYYY) atau Y-m-d
+                filename:
+                  type: string
+                  example: surat_izin_001.pdf
+                alasan_id:
+                  type: integer
+                  nullable: true
+                  example: 1
+                  description: ID alasan / jenis cuti
+                is_potong_cuti:
+                  type: integer
+                  nullable: true
+                  example: 1
+                  description: Set 1 jika memotong kuota cuti
       responses:
         '200':
           description: Pengajuan berhasil
@@ -1552,3 +2214,492 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PreCheckLemburResponse'
+
+  # ─────────────────────────────────────────
+  # ALOKASI JADWAL LEMBUR (FLUTTER MOBILE)
+  # ─────────────────────────────────────────
+  /mobile-v2/alokasi-lembur/user-context:
+    get:
+      tags: [Alokasi Lembur]
+      summary: User Context & Multi-Peran (Definitif / Interim)
+      description: |
+        Mengambil identitas pegawai, hak akses jabatan definitif, serta daftar jabatan interim aktif (Plt / Pj).
+        Digunakan oleh Header Flutter untuk menampilkan profil dan mengisi Dropdown Switcher Peran (Definitif vs Interim).
+      parameters:
+        - name: role_key
+          in: query
+          required: false
+          schema:
+            type: string
+            example: 'definitif'
+          description: "Kunci peran yang ingin diaktifkan (misal: 'definitif', 'interim_1')"
+        - name: X-Role-Key
+          in: header
+          required: false
+          schema:
+            type: string
+            example: 'definitif'
+      responses:
+        '200':
+          description: Data context pengguna berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserContextResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Alokasi Lembur]
+      summary: User Context & Multi-Peran (POST Alternative)
+      description: Alternatif POST untuk mengambil user context.
+      parameters:
+        - name: role_key
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data context pengguna berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserContextResponse'
+
+  /mobile-v2/alokasi-lembur/ref-department:
+    get:
+      tags: [Alokasi Lembur]
+      summary: Referensi Bagian (Department)
+      description: |
+        Mengambil daftar Bagian yang dapat dipilih pada form pengajuan atau filter riwayat.
+        Otomatis di-scope berdasarkan unit aktif (jika non-admin, terkunci ke Bagian unit aktifnya).
+      parameters:
+        - name: role_key
+          in: query
+          required: false
+          schema:
+            type: string
+            example: 'definitif'
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Pencarian nama atau kode bagian
+      responses:
+        '200':
+          description: Daftar Bagian berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefDepartmentResponse'
+        '401':
+          description: Unauthorized
+    post:
+      tags: [Alokasi Lembur]
+      summary: Referensi Bagian (POST Alternative)
+      responses:
+        '200':
+          description: Daftar Bagian berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefDepartmentResponse'
+
+  /mobile-v2/alokasi-lembur/ref-subdepartment:
+    get:
+      tags: [Alokasi Lembur]
+      summary: Referensi Sub Bagian (Subdepartment)
+      description: |
+        Mengambil daftar Sub Bagian di bawah Bagian yang dipilih.
+        - **Jika Manager Unit**: Dapat memilih semua Sub Bagian di bawah Bagian tersebut.
+        - **Jika Non-Manager / Staf**: Terkunci ke Sub Bagian unitnya (kecuali Dept 33 Subdept 80 mencakup Subdept 132).
+      parameters:
+        - name: dept_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 33
+          description: ID Bagian induk
+        - name: role_key
+          in: query
+          required: false
+          schema:
+            type: string
+            example: 'definitif'
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Pencarian nama/kode sub bagian
+      responses:
+        '200':
+          description: Daftar Sub Bagian berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefSubDepartmentResponse'
+        '401':
+          description: Unauthorized
+    post:
+      tags: [Alokasi Lembur]
+      summary: Referensi Sub Bagian (POST Alternative)
+      responses:
+        '200':
+          description: Daftar Sub Bagian berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefSubDepartmentResponse'
+
+  /mobile-v2/alokasi-lembur/ref-pegawai:
+    get:
+      tags: [Alokasi Lembur]
+      summary: Referensi Pegawai Lembur (Bawahan Aktif)
+      description: |
+        Mengambil daftar pegawai bawahan aktif (tidak pensiun, level > 3) di unit Bagian/Sub Bagian yang dipilih.
+        Digunakan oleh Flutter saat menambahkan baris pegawai lembur di form pengajuan.
+      parameters:
+        - name: dept_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 33
+        - name: subdept_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 80
+        - name: role_key
+          in: query
+          required: false
+          schema:
+            type: string
+            example: 'definitif'
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Pencarian nama atau NUP pegawai
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Daftar pegawai berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefPegawaiResponse'
+        '401':
+          description: Unauthorized
+    post:
+      tags: [Alokasi Lembur]
+      summary: Referensi Pegawai Lembur (POST Alternative)
+      responses:
+        '200':
+          description: Daftar pegawai berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefPegawaiResponse'
+
+  /mobile-v2/alokasi-lembur/list:
+    get:
+      tags: [Alokasi Lembur]
+      summary: Riwayat Alokasi Lembur (Cards)
+      description: |
+        Menampilkan daftar jadwal lembur dalam format Card untuk Tab Riwayat di Flutter.
+        Mendukung filter tanggal, bagian, sub bagian, pencarian kata kunci, serta pagination.
+      parameters:
+        - name: dept_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 33
+        - name: subdept_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            example: 80
+        - name: tanggal_from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: '2026-11-01'
+          description: Filter dari tanggal
+        - name: tanggal_to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: '2026-11-30'
+          description: Filter sampai tanggal
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Pencarian uraian pekerjaan atau nama bagian
+        - name: role_key
+          in: query
+          required: false
+          schema:
+            type: string
+            example: 'definitif'
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Daftar riwayat lembur berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlokasiLemburListResponse'
+        '401':
+          description: Unauthorized
+    post:
+      tags: [Alokasi Lembur]
+      summary: Riwayat Alokasi Lembur (POST Alternative)
+      responses:
+        '200':
+          description: Daftar riwayat lembur berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlokasiLemburListResponse'
+
+  /mobile-v2/alokasi-lembur/detail:
+    get:
+      tags: [Alokasi Lembur]
+      summary: Detail Alokasi Lembur & Status Kehadiran
+      description: |
+        Mengambil detail satu jadwal lembur beserta daftar pegawai, jam rencana, jam realisasi,
+        jam masuk & pulang aktual (dari `kepegawaian.absen_trans_lembur`), durasi kerja, dan status kehadiran (Hadir/Belum).
+        Digunakan oleh Modal Detail Pegawai Lembur pada Layar 3 di Flutter mockup.
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 1
+          description: ID Alokasi Lembur (spkl_id)
+        - name: role_key
+          in: query
+          required: false
+          schema:
+            type: string
+            example: 'definitif'
+      responses:
+        '200':
+          description: Detail alokasi lembur berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlokasiLemburDetailResponse'
+        '400':
+          description: ID Alokasi Lembur tidak valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Tidak memiliki hak akses
+        '404':
+          description: Data Alokasi Lembur tidak ditemukan
+    post:
+      tags: [Alokasi Lembur]
+      summary: Detail Alokasi Lembur (POST Alternative)
+      responses:
+        '200':
+          description: Detail alokasi lembur berhasil dimuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlokasiLemburDetailResponse'
+
+  /mobile-v2/alokasi-lembur/store:
+    post:
+      tags: [Alokasi Lembur]
+      summary: Simpan / Update Alokasi Lembur
+      description: |
+        Menyimpan jadwal lembur baru atau memperbarui jadwal lembur yang sudah ada (Tab Pengajuan).
+        - **Validasi**: Tanggal Masuk, Bagian, Keterangan, dan minimal 1 Pegawai wajib diisi.
+        - **Validasi Bentrok Jadwal**: Memeriksa apakah pegawai sudah memiliki jadwal lembur yang bertabrakan pada rentang jam tersebut via `checkBentrokLembur`.
+        - **Sinkronisasi Otomatis**: Secara otomatis membuat / mengupdate baris absensi lembur di `kepegawaian.absen_trans_lembur`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlokasiLemburStoreRequest'
+      responses:
+        '200':
+          description: Jadwal lembur berhasil disimpan / diupdate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Jadwal lembur baru berhasil disimpan!"
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '403':
+          description: Tidak memiliki hak akses pada Bagian / Sub Bagian yang dipilih
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validasi input gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Gagal menyimpan (contoh bentrok jadwal lembur pegawai)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /mobile-v2/alokasi-lembur/delete:
+    post:
+      tags: [Alokasi Lembur]
+      summary: Hapus Jadwal Lembur
+      description: |
+        Menghapus jadwal lembur dan rincian pegawai, serta melakukan soft-delete (`is_delete = 1`)
+        pada tabel `kepegawaian.absen_trans_lembur` pegawai terkait.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                  example: 1
+                  description: ID Alokasi Lembur yang akan dihapus
+      responses:
+        '200':
+          description: Jadwal lembur berhasil dihapus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Jadwal lembur berhasil dihapus."
+        '400':
+          description: ID Alokasi Lembur tidak valid
+        '403':
+          description: Tidak memiliki hak akses
+        '404':
+          description: Data Alokasi Lembur tidak ditemukan
+    delete:
+      tags: [Alokasi Lembur]
+      summary: Hapus Jadwal Lembur (DELETE Alternative)
+      responses:
+        '200':
+          description: Jadwal lembur berhasil dihapus
+
+  /mobile-v2/alokasi-lembur/realisasi:
+    post:
+      tags: [Alokasi Lembur]
+      summary: Simpan Realisasi Jam Lembur
+      description: |
+        Memperbarui kolom `realisasi_dari_jam`, `realisasi_sampai_jam`, dan `keterangan`
+        pada tabel `kepegawaian.alokasi_lembur_detail`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [detail]
+              properties:
+                detail:
+                  type: array
+                  items:
+                    type: object
+                    required: [id]
+                    properties:
+                      id:
+                        type: integer
+                        example: 101
+                        description: ID detail alokasi lembur
+                      realisasi_dari_jam:
+                        type: string
+                        example: "08:00"
+                      realisasi_sampai_jam:
+                        type: string
+                        example: "16:00"
+                      keterangan:
+                        type: string
+                        nullable: true
+                        example: "Selesai tepat waktu"
+      responses:
+        '200':
+          description: Realisasi jam lembur berhasil disimpan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Realisasi jam lembur berhasil disimpan"
+        '422':
+          description: Tidak ada data realisasi yang dikirim
